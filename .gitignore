@@ -11,10 +11,16 @@ node_modules
 dist
 dist-ssr
 .output
+.vercel
 .vinxi
 .tanstack/**
 .nitro
 *.local
+
+# Environment (set these in Vercel dashboard, not in git)
+.env
+.env.*
+!.env.example
 
 # Wrangler / Cloudflare
 .wrangler/

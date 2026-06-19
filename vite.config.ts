@@ -163,10 +163,13 @@ function devServerFnErrorLogger() {
 export default defineConfig(({ command }) => {
   const isVercel = !!process.env.VERCEL;
   const isNetlify = !!process.env.NETLIFY;
-  // Cloudflare Workers: local/default production builds only
-  const useCloudflare = command === "build" && !isNetlify && !isVercel;
-  // Vercel and Netlify use Nitro to produce the correct server output
-  const useNitro = command === "build" && (isVercel || isNetlify);
+  const isCloudflare =
+    !!process.env.CF_PAGES || process.env.DEPLOY_TARGET === "cloudflare";
+  // Default production builds use Nitro (Vercel). Cloudflare only when explicitly targeted.
+  const useCloudflare =
+    command === "build" && isCloudflare && !isVercel && !isNetlify;
+  const useNitro = command === "build" && !useCloudflare;
+  const nitroPreset = isVercel ? "vercel" : isNetlify ? "netlify" : "vercel";
 
   return {
     server: {
@@ -187,7 +190,7 @@ export default defineConfig(({ command }) => {
       devClientErrorLogger(),
       devServerFnErrorLogger(),
       ...(useCloudflare ? [cloudflare({ viteEnvironment: { name: "ssr" } })] : []),
-      ...(useNitro ? [nitro({ preset: isVercel ? "vercel" : "netlify" })] : []),
+      ...(useNitro ? [nitro({ preset: nitroPreset })] : []),
       tanstackStart(),
       viteReact(),
     ].filter(Boolean),
