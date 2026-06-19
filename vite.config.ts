@@ -5,6 +5,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { nitro } from "nitro/vite";
 
 function devClientErrorLogger() {
   const VIRTUAL_ID = "virtual:dev-client-error-handler";
@@ -159,10 +160,13 @@ function devServerFnErrorLogger() {
   };
 }
 
-export default defineConfig(({ command, mode }) => {
-  // Use Cloudflare Workers plugin for builds only if not building on Netlify
-  // Skip for dev server (command=serve) since workerd runtime isn't available
-  const useCloudflare = command === "build" && !process.env.NETLIFY;
+export default defineConfig(({ command }) => {
+  const isVercel = !!process.env.VERCEL;
+  const isNetlify = !!process.env.NETLIFY;
+  // Cloudflare Workers: local/default production builds only
+  const useCloudflare = command === "build" && !isNetlify && !isVercel;
+  // Vercel and Netlify use Nitro to produce the correct server output
+  const useNitro = command === "build" && (isVercel || isNetlify);
 
   return {
     server: {
@@ -183,6 +187,7 @@ export default defineConfig(({ command, mode }) => {
       devClientErrorLogger(),
       devServerFnErrorLogger(),
       ...(useCloudflare ? [cloudflare({ viteEnvironment: { name: "ssr" } })] : []),
+      ...(useNitro ? [nitro({ preset: isVercel ? "vercel" : "netlify" })] : []),
       tanstackStart(),
       viteReact(),
     ].filter(Boolean),
