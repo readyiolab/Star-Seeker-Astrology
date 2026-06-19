@@ -160,9 +160,9 @@ function devServerFnErrorLogger() {
 }
 
 export default defineConfig(({ command, mode }) => {
-  // Use Cloudflare Workers plugin for builds (produces worker output)
+  // Use Cloudflare Workers plugin for builds only if not building on Netlify
   // Skip for dev server (command=serve) since workerd runtime isn't available
-  const useCloudflare = command === "build";
+  const useCloudflare = command === "build" && !process.env.NETLIFY;
 
   return {
     server: {
